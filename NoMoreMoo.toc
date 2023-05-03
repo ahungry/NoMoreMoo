@@ -1,0 +1,7 @@
+## Interface: 11200
+## Title: NoMoreMoo
+## Notes: Get rid of annoying moo and goldspam
+## Author: Ahungry
+## Version: 1.12.1.2
+## SavedVariablesPerCharacter: NoMoreMoo_KeyWords, NoMoreMoo_Enabled
+NoMoreMoo.xml
