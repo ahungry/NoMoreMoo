@@ -5,30 +5,40 @@ local log = function(text, r, g, b, group, holdTime)
 end
 
 local hookChatFrame = function(frame)
-  if (not frame) then return end
+   if (not frame) then return end
 
-  local original = frame.AddMessage
-  if (original) then
-    frame.AddMessage = function(t, message, ...)
-      if (NoMoreMoo_Enabled) then
-        local found, _, channel = string.find(message, "^%[%d+. ([^%]]+)%]")
-        if (found and channel) then
-          channel = string.lower(channel)
-          if ((channel == "world") or (channel == "trade") or (channel == "nmm")) then
-            -- TODO: Rollup of multiple messages and report all that came through
-            -- TODO: Split gold/moo into separate filters
-             if (NoMoreMoo_FindKeyword(message) and not NoMoreMoo_IsItemLink(message)) then
-               original(t, "Saw a moo - ignoring it", unpack (arg))
-              return
+   local original = frame.AddMessage
+   if (original) then
+      frame.AddMessage = function(t, message, ...)
+         if (NoMoreMoo_Enabled) then
+            local is_gm = string.find(message, "^%[%d+. ([^%]]+)%] <DND>")
+            local is_mod_reference = string.find(string.lower(message), "nomoremoo")
+
+            if (is_gm or is_mod_reference) then
+               original(t, "Skipping suppression on GM/mod reference messages", unpack (arg))
+               original(t, message, unpack (arg))
+               return
             end
-          end
-        end
+
+            local found, _, channel, player, comment = string.find(message, "^%[%d+. ([^%]]+)%].*%[([^%]]+)%][^ ]* (.*)")
+
+            if (found and channel) then
+               channel = string.lower(channel)
+               if ((channel == "world") or (channel == "trade") or (channel == "nmm")) then
+                  -- TODO: Rollup of multiple messages and report all that came through
+                  -- TODO: Split gold/moo into separate filters
+                  if (NoMoreMoo_FindKeyword(message) and not NoMoreMoo_IsItemLink(message)) then
+                     original(t, string.format("Saw a moo by %s (%s) at %s - ignoring it", player, comment, time()), unpack (arg))
+                     return
+                  end
+               end
+            end
+         end
+         original(t, message, unpack (arg))
       end
-      original(t, message, unpack (arg))
-    end
-  else
-    log("Tried to hook non-chat frame")
-  end
+   else
+      log("Tried to hook non-chat frame")
+   end
 end
 
 -- /script DEFAULT_CHAT_FRAME:AddMessage("\124cffff70dd[Arcanite Reaper]\124h\124r", 5);
