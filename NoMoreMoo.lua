@@ -71,7 +71,7 @@ end
 local initialize = function()
    -- NoMoreMoo_KeyWords = NoMoreMoo_KeyWords or {["[Mm]+[Oo]+"] = true}
    -- TODO: Merge user settings with the specialized checks we always want
-   NoMoreMoo_KeyWords = {["[Mm]+[Oo]+"] = true, ["\124c"] = true}
+   NoMoreMoo_KeyWords = {["[Mm]+[Oo][Oo]+"] = true, ["\124c"] = true}
    NoMoreMoo_Enabled = NoMoreMoo_Enabled or true
    hookFunctions()
 
