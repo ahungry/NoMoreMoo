@@ -120,7 +120,7 @@ local initialize = function()
       ["[Mm]+[Oo][Oo]+"] = true,
       ["\124c"] = true,
       ["[Nn][Oo][Ss][Tt].*100"] = true,
-      ["[Nn][Ee][Ee][Dd].*[Mm][Aa][Nn][Aa]"] = true
+      ["[Nn].*[Ee].*[Ee].*[Dd].*[Mm].*[Aa].*[Nn].*[Aa]"] = true
    }
    NoMoreMoo_Enabled = NoMoreMoo_Enabled or true
    NoMoreMoo_Spamnet = {}
