@@ -29,16 +29,20 @@ local hookChatFrame = function(frame)
                if ((channel == "world") or (channel == "trade") or (channel == "nmm")) then
                   -- TODO: Rollup of multiple messages and report all that came through
                   -- TODO: Split gold/moo into separate filters
-                  if (NoMoreMoo_FindKeyword(comment) and not NoMoreMoo_IsItemLink(comment)) then
+                  if (NoMoreMoo_FindKeyword(comment) and not
+                      (NoMoreMoo_IsItemLink(comment) or
+                       NoMoreMoo_IsClickedLink(comment) or
+                       NoMoreMoo_IsNotValidReference(comment))) then
                      original(t, string.format("Saw a moo by %s (%s) at %s - ignoring it", player, comment, time()), unpack (arg))
 
-                     if (not NoMoreMoo_Spamnet[player]) then
-                        NoMoreMoo_Spamnet[player] = {}
+                     local playerk = string.lower(player)
+                     if (not NoMoreMoo_Spamnet[playerk]) then
+                        NoMoreMoo_Spamnet[playerk] = {}
                      end
-                     local spam = NoMoreMoo_Spamnet[player]
+                     local spam = NoMoreMoo_Spamnet[playerk]
                      table.insert(spam, message)
                      -- spam[#spam+1] = message -- string.format("[%s]: %s", player, comment)
-                     NoMoreMoo_Spamnet[player] = spam -- perhaps redundant if this is by ref
+                     NoMoreMoo_Spamnet[playerk] = spam -- perhaps redundant if this is by ref
 
                      return
                   end
@@ -58,10 +62,26 @@ function NoMoreMoo_IsItemLink(message)
    if (string.find(message, "\124Hitem:")) then
       return true
    end
+   return false
+end
+
+function NoMoreMoo_IsClickedLink(message)
    -- -- Or is a clicked reference of some sort - the gold sellers usually don't have the rectangle brackets
-   -- if (string.find(message, "%]\124h")) then
-   --    return true
-   -- end
+   if (string.find(message, "%]")) then
+      return true
+   end
+   return false
+end
+
+function NoMoreMoo_IsNotValidReference(message)
+   -- -- Or is a clicked reference of some sort - the gold sellers usually don't have the rectangle brackets
+   local msg = string.lower(message)
+   if (string.find(msg, "moon")) then
+      return true
+   end
+   if (string.find(msg, "mood")) then
+      return true
+   end
    return false
 end
 
@@ -96,7 +116,12 @@ end
 local initialize = function()
    -- NoMoreMoo_KeyWords = NoMoreMoo_KeyWords or {["[Mm]+[Oo]+"] = true}
    -- TODO: Merge user settings with the specialized checks we always want
-   NoMoreMoo_KeyWords = {["[Mm]+[Oo][Oo]+"] = true, ["\124c"] = true}
+   NoMoreMoo_KeyWords = {
+      ["[Mm]+[Oo][Oo]+"] = true,
+      ["\124c"] = true,
+      ["[Nn][Oo][Ss][Tt].*100"] = true,
+      ["[Nn][Ee][Ee][Dd].*[Mm][Aa][Nn][Aa]"] = true
+   }
    NoMoreMoo_Enabled = NoMoreMoo_Enabled or true
    NoMoreMoo_Spamnet = {}
    hookFunctions()
@@ -158,7 +183,7 @@ local commands = setmetatable({
   -- end,
 
   ["list"] = function()
-     local spamlist = ""
+     local spamlist = " --> "
      for spammer, _ in pairs(NoMoreMoo_Spamnet) do
         if ("" == spamlist) then
            spamlist = spammer
@@ -171,7 +196,12 @@ local commands = setmetatable({
   end,
 
   ["net"] = function(args)
-     for _, message in pairs(NoMoreMoo_Spamnet[args]) do
+     local playerk = string.lower(args)
+     if (not NoMoreMoo_Spamnet[playerk]) then
+        log(string.format("Player: %s is not in the spam net.", playerk))
+        return
+     end
+     for _, message in pairs(NoMoreMoo_Spamnet[playerk]) do
         log(message)
      end
   end,
