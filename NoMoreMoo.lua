@@ -11,24 +11,35 @@ local hookChatFrame = function(frame)
    if (original) then
       frame.AddMessage = function(t, message, ...)
          if (NoMoreMoo_Enabled) then
-            local is_gm = string.find(message, "^%[%d+. ([^%]]+)%] <DND>")
+            local is_gm = string.find(message, "^%[%d+. ([^%]]+)%] <GM>")
             local is_mod_reference = string.find(string.lower(message), "nomoremoo")
 
             if (is_gm or is_mod_reference) then
-               original(t, "Skipping suppression on GM/mod reference messages", unpack (arg))
-               original(t, message, unpack (arg))
+               -- original(t, "Skipping suppression on GM/mod reference messages", unpack (arg))
+               -- original(t, message, unpack (arg))
                return
             end
 
-            local found, _, channel, player, comment = string.find(message, "^%[%d+. ([^%]]+)%].*%[([^%]]+)%][^ ]* (.*)")
+            -- local found, _, channel, player, comment = string.find(message, "^%[%d+. ([^%]]+)%].*%[([^%]]+)%][^ ]* (.*)")
+            -- Try to prevent too far forward read
+            local found, _, channel, player, comment = string.find(message, "^%[%d+. ([^%]]+)%][^%[]*%[([^%]]+)%][^ ]* (.*)")
 
             if (found and channel) then
                channel = string.lower(channel)
                if ((channel == "world") or (channel == "trade") or (channel == "nmm")) then
                   -- TODO: Rollup of multiple messages and report all that came through
                   -- TODO: Split gold/moo into separate filters
-                  if (NoMoreMoo_FindKeyword(message) and not NoMoreMoo_IsItemLink(message)) then
+                  if (NoMoreMoo_FindKeyword(comment) and not NoMoreMoo_IsItemLink(comment)) then
                      original(t, string.format("Saw a moo by %s (%s) at %s - ignoring it", player, comment, time()), unpack (arg))
+
+                     if (not NoMoreMoo_Spamnet[player]) then
+                        NoMoreMoo_Spamnet[player] = {}
+                     end
+                     local spam = NoMoreMoo_Spamnet[player]
+                     table.insert(spam, message)
+                     -- spam[#spam+1] = message -- string.format("[%s]: %s", player, comment)
+                     NoMoreMoo_Spamnet[player] = spam -- perhaps redundant if this is by ref
+
                      return
                   end
                end
@@ -47,6 +58,10 @@ function NoMoreMoo_IsItemLink(message)
    if (string.find(message, "\124Hitem:")) then
       return true
    end
+   -- -- Or is a clicked reference of some sort - the gold sellers usually don't have the rectangle brackets
+   -- if (string.find(message, "%]\124h")) then
+   --    return true
+   -- end
    return false
 end
 
@@ -83,6 +98,7 @@ local initialize = function()
    -- TODO: Merge user settings with the specialized checks we always want
    NoMoreMoo_KeyWords = {["[Mm]+[Oo][Oo]+"] = true, ["\124c"] = true}
    NoMoreMoo_Enabled = NoMoreMoo_Enabled or true
+   NoMoreMoo_Spamnet = {}
    hookFunctions()
 
    log(string.format("NoMoreMoo loaded (%s)", (NoMoreMoo_Enabled and "enabled") or "disabled"))
@@ -132,25 +148,50 @@ local commands = setmetatable({
     log("NoMoreMoo disabled")
   end,
 
+  -- ["list"] = function()
+  --   local keywords = {}
+  --   log("Keywords on the list:")
+  --   for keyword,_ in pairs(NoMoreMoo_KeyWords) do
+  --     table.insert(keywords, keyword)
+  --   end
+  --   log(table.concat(keywords, ", "))
+  -- end,
+
   ["list"] = function()
-    local keywords = {}
-    log("Keywords on the list:")
-    for keyword,_ in pairs(NoMoreMoo_KeyWords) do
-      table.insert(keywords, keyword)
-    end
-    log(table.concat(keywords, ", "))
+     local spamlist = ""
+     for spammer, _ in pairs(NoMoreMoo_Spamnet) do
+        if ("" == spamlist) then
+           spamlist = spammer
+        else
+           spamlist = string.format("%s, %s", spamlist, spammer)
+        end
+     end
+     log("The following spammers were caught in the net: ")
+     log(spamlist)
+  end,
+
+  ["net"] = function(args)
+     for _, message in pairs(NoMoreMoo_Spamnet[args]) do
+        log(message)
+     end
+  end,
+
+  ["clear"] = function(args)
+     NoMoreMoo_Spamnet = {}
   end,
 
 }, {
   __index = function()
     return function()
-      log("NoMoreMoo - Filters World channel by keywords")
+      log("NoMoreMoo - Get rid of moo and gold spam")
       log("Commands:")
-      log("  /nmm add <keyword> - add a keyword to the list.")
-      log("  /nmm del <keyword> - removes a keyword from the list.")
-      log("  /nmm list          - lists all keywords currently active.")
-      log("  /nmm on/off        - temporarily disables or re-enables World Filter.")
-      log("Note: all keywords are treated as regular expressions!")
+      log("  /nmm list           - list everyone spammer in the spamnet.")
+      log("  /nmm net <spammer>  - List all caught messages by <spammer>.")
+      log("  /nmm clear          - remove all the spam net data")
+      -- log("  /nmm add <keyword> - add a keyword to the list.")
+      -- log("  /nmm del <keyword> - removes a keyword from the list.")
+      log("  /nmm on/off         - temporarily disables or re-enables NoMoreMoo.")
+      -- log("Note: all keywords are treated as regular expressions!")
     end
   end
 })
