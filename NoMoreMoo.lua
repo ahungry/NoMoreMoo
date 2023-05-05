@@ -33,7 +33,8 @@ local hookChatFrame = function(frame)
                       (NoMoreMoo_IsItemLink(comment) or
                        NoMoreMoo_IsClickedLink(comment) or
                        NoMoreMoo_IsNotValidReference(comment))) then
-                     original(t, string.format("Saw a moo by %s (%s) at %s - ignoring it", player, comment, time()), unpack (arg))
+                     -- TODO: make a /nmm debug toggle to control this (see enable/disable)
+                     -- original(t, string.format("Saw a moo by %s (%s) at %s - ignoring it", player, comment, time()), unpack (arg))
 
                      local playerk = string.lower(player)
                      if (not NoMoreMoo_Spamnet[playerk]) then
