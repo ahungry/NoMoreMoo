@@ -16,7 +16,7 @@ local hookChatFrame = function(frame)
 
             if (is_gm or is_mod_reference) then
                -- original(t, "Skipping suppression on GM/mod reference messages", unpack (arg))
-               -- original(t, message, unpack (arg))
+               original(t, message, unpack (arg))
                return
             end
 
