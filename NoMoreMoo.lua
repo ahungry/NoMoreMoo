@@ -121,6 +121,8 @@ local initialize = function()
       ["[Mm]+[Oo][Oo]+"] = true,
       ["\124c"] = true,
       ["[Nn][Oo][Ss][Tt].*100"] = true,
+      ["NOST100"] = true,
+      ["nost100"] = true,
       [" GOLD "] = true,
       ["[Nn]....[Ee]....[Ee]....[Dd]....[Mm]....[Aa]....[Nn]....[Aa]"] = true
    }
