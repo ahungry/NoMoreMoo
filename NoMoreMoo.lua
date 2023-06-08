@@ -124,6 +124,7 @@ local initialize = function()
       ["N[O0]ST1"] = true,
       ["nost1"] = true,
       [" GOLD "] = true,
+      ["items-Gold-Level-Bags"] = true,
       ["[Nn]....[Ee]....[Ee]....[Dd]....[Mm]....[Aa]....[Nn]....[Aa]"] = true
    }
    NoMoreMoo_Enabled = NoMoreMoo_Enabled or true
